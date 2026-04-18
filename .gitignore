@@ -1,0 +1,16 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Personal audio & data — never commit
+voicemails/*.m4a
+processed/*.m4a
+metadata.json
+
+# Generated output
+*.sesx
+
+# macOS
+.DS_Store
