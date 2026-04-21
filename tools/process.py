@@ -37,22 +37,21 @@ from rich import box
 console = Console()
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-METADATA_FILE = PROJECT_ROOT / "metadata.json"
 
 PRESET_TAGS = ["intimate", "urgent", "emotional", "background", "key-scene", "ambient"]
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
-def load_metadata() -> list[dict]:
-    if METADATA_FILE.exists():
-        with open(METADATA_FILE, "r", encoding="utf-8") as f:
+def load_metadata(metadata_file: Path) -> list[dict]:
+    if metadata_file.exists():
+        with open(metadata_file, "r", encoding="utf-8") as f:
             return json.load(f)
     return []
 
 
-def save_metadata(entries: list[dict]) -> None:
-    with open(METADATA_FILE, "w", encoding="utf-8") as f:
+def save_metadata(entries: list[dict], metadata_file: Path) -> None:
+    with open(metadata_file, "w", encoding="utf-8") as f:
         json.dump(entries, f, indent=2, ensure_ascii=False)
 
 
@@ -243,10 +242,17 @@ def main() -> None:
         default=PROJECT_ROOT / "processed",
         help="Destination folder for renamed files (default: processed/)",
     )
+    parser.add_argument(
+        "--metadata",
+        type=Path,
+        default=PROJECT_ROOT / "metadata.json",
+        help="Path to metadata JSON file (default: metadata.json)",
+    )
     args = parser.parse_args()
 
     voicemails_dir: Path = args.voicemails_dir.resolve()
     output_dir: Path = args.output_dir.resolve()
+    metadata_file: Path = args.metadata.resolve()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     files = sorted(voicemails_dir.glob("*.m4a"))
@@ -263,7 +269,7 @@ def main() -> None:
 
     console.print(f"[green]Whisper model '{args.model}' ready.[/green]\n")
 
-    entries = load_metadata()
+    entries = load_metadata(metadata_file)
     already_done = {e["original_filename"] for e in entries}
 
     new_files = [f for f in files if f.name not in already_done]
@@ -282,7 +288,7 @@ def main() -> None:
         console.rule(f"[bold blue]{i} / {len(new_files)}  ·  {filepath.name}[/bold blue]")
         entry = process_file(filepath, model, output_dir, entries)
         entries.append(entry)
-        save_metadata(entries)
+        save_metadata(entries, metadata_file)
 
     console.rule("[bold green]Done[/bold green]")
     print_summary(entries)
